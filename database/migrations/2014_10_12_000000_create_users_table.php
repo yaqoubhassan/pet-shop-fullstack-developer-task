@@ -11,8 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create(
-            'users', function (Blueprint $table) {
+        Schema::create('users', function (Blueprint $table) {
                 $table->id();
                 $table->uuid('uuid')->unique();
                 $table->string('first_name');
@@ -28,8 +27,7 @@ return new class extends Migration
                 $table->rememberToken();
                 $table->timestamps();
                 $table->timestamp('last_login_at')->nullable();
-            }
-        );
+        });
     }
 
     /**
