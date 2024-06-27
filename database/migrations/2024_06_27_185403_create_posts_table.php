@@ -11,10 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('order_statuses', function (Blueprint $table) {
+        Schema::create('posts', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique();
+            $table->string('uuid')->unique();
             $table->string('title');
+            $table->string('slug')->unique();
+            $table->text('content');
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
     }
@@ -24,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('order_statuses');
+        Schema::dropIfExists('posts');
     }
 };
