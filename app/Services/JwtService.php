@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
-use Lcobucci\JWT\Configuration;
-use Lcobucci\JWT\Signer\Key\InMemory;
-use Lcobucci\JWT\Signer\Rsa\Sha256;
-use Lcobucci\JWT\Token\Plain;
-use Lcobucci\JWT\Validation\RequiredConstraintsViolated;
 use Lcobucci\JWT\Validation\Validator;
+use Lcobucci\JWT\Validation\RequiredConstraintsViolated;
+use Lcobucci\JWT\Token\Plain;
+use Lcobucci\JWT\Signer\Rsa\Sha256;
+use Lcobucci\JWT\Signer\Key\InMemory;
+use Lcobucci\JWT\Configuration;
 use Carbon\Carbon;
+use App\Models\User;
 
 class JwtService
 {
@@ -23,14 +24,15 @@ class JwtService
         );
     }
 
-    public function createToken($userUuid)
+    public function generateToken(User $user)
     {
         $now = new \DateTimeImmutable();
+
         $token = $this->config->builder()
             ->issuedBy(config('jwt.issuer'))
             ->issuedAt($now)
             ->expiresAt($now->modify('+1 hour'))
-            ->withClaim('user_uuid', $userUuid)
+            ->withClaim('user_uuid', $user->uuid)
             ->getToken($this->config->signer(), $this->config->signingKey());
 
         return $token->toString();
