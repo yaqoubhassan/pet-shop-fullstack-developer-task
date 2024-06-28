@@ -8,4 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class JwtToken extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'unique_id',
+        'token_title',
+        'restrictions',
+        'permissions',
+        'expires_at',
+        'last_used_at',
+        'refreshed_at',
+    ];
 }
