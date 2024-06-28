@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Configuration;
-use Lcobucci\JWT\Signer\Hmac\Sha256;
-use Lcobucci\JWT\Signer\Key;
+use Lcobucci\JWT\Signer\Key\InMemory;
+use Lcobucci\JWT\Signer\Rsa\Sha256;
 use Lcobucci\JWT\Token\Plain;
-use Lcobucci\JWT\Validation\Constraint\SignedWith;
 use Lcobucci\JWT\Validation\RequiredConstraintsViolated;
+use Lcobucci\JWT\Validation\Validator;
+use Carbon\Carbon;
 
 class JwtService
 {
@@ -16,43 +16,46 @@ class JwtService
 
     public function __construct()
     {
-        $this->config = Configuration::forSymmetricSigner(
+        $this->config = Configuration::forAsymmetricSigner(
             new Sha256(),
-            Key\InMemory::plainText(env('JWT_SECRET'))
+            InMemory::file(config('jwt.keys.private')),
+            InMemory::file(config('jwt.keys.public'))
         );
     }
 
-    public function createToken($userId): Plain
+    public function createToken($userUuid)
     {
-        return $this->config->builder()
-        ->issuedBy(env('APP_URL'))
-        ->permittedFor(env('APP_URL'))
-        ->identifiedBy(bin2hex(random_bytes(16)), true)
-        ->issuedAt(new \DateTimeImmutable())
-        ->canOnlyBeUsedAfter(new \DateTimeImmutable())
-        ->expiresAt((new \DateTimeImmutable())->modify('+1 hour'))
-        ->withClaim('uid', $userId)
-        ->getToken($this->config->signer(), $this->config->signingKey());
+        $now = new \DateTimeImmutable();
+        $token = $this->config->builder()
+            ->issuedBy(config('jwt.issuer'))
+            ->issuedAt($now)
+            ->expiresAt($now->modify('+1 hour'))
+            ->withClaim('user_uuid', $userUuid)
+            ->getToken($this->config->signer(), $this->config->signingKey());
+
+        return $token->toString();
     }
 
-    public function validateToken(string $token): bool
+    public function validateToken($token)
     {
         try {
-            $jwt = $this->config->parser()->parse($token);
+            $token = $this->config->parser()->parse($token);
+            assert($token instanceof Plain);
+
             $constraints = $this->config->validationConstraints();
-            $this->config->validator()->assert($jwt, ...$constraints);
+            $this->config->validator()->assert($token, ...$constraints);
+
             return true;
-        } catch (RequiredConstraintsViolated $e) {
+        } catch (RequiredConstraintsViolated | \Exception $e) {
             return false;
         }
     }
 
-    public function parseToken(string $token): ?Plain
+    public function getUserUuidFromToken($token)
     {
-        try {
-            return $this->config->parser()->parse($token);
-        } catch (\Exception $e) {
-            return null;
-        }
+        $token = $this->config->parser()->parse($token);
+        assert($token instanceof Plain);
+
+        return $token->claims()->get('user_uuid');
     }
 }
