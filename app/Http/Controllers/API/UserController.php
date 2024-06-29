@@ -101,6 +101,14 @@ class UserController extends Controller
         //
     }
 
+    /**
+     * Wrapper method to test handleFileUpload.
+     */
+    public function testHandleFileUpload($file)
+    {
+        return $this->handleFileUpload($file);
+    }
+
     private function handleFileUpload($file)
     {
         $filePath = $file->store('avatars', 'public');
